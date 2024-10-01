@@ -1,0 +1,36 @@
+name: Check Lambda Authorization
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - name: Initialize Terraform
+      run: terraform init
+
+    - name: Validate Terraform
+      run: terraform validate
+
+    - name: Plan Terraform
+      run: terraform plan -out=tfplan -var="environment=${{ github.ref == 'refs/heads/dev' && 'dev' || 'prod' }}"
+
+    - name: Notify Success
+      if: success()
+      
+      run: echo "Check successful!"
